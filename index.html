@@ -1,1 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現場URLリスト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #202124;
+            font-size: 28px;
+            font-weight: 400;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .search-box input:focus {
+            border-color: #4285f4;
+            box-shadow: 0 1px 6px rgba(32,33,36,.28);
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+
+        thead {
+            background-color: #f8f9fa;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 500;
+            color: #5f6368;
+            font-size: 14px;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #e8eaed;
+            color: #202124;
+            font-size: 14px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .clickable {
+            cursor: pointer;
+            color: #1a73e8;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .clickable:hover {
+            background-color: #e8f0fe;
+            text-decoration: underline;
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            color: #5f6368;
+        }
+
+        .copy-btn:hover {
+            background-color: #e8eaed;
+        }
+
+        .copy-btn::after {
+            content: '📋';
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #323232;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 4px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #5f6368;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>現場URLリスト</h1>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="現場名で検索...">
+        </div>
+
+        <table id="siteTable">
+            <thead>
+                <tr>
+                    <th>現場名</th>
+                    <th>ID</th>
+                    <th>Password</th>
+                    <th>URL</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- サンプルデータ -->
+            </tbody>
+        </table>
+
+        <div class="no-results" id="noResults" style="display: none;">
+            検索結果が見つかりませんでした
+        </div>
+    </div>
+
+    <div class="toast" id="toast">コピーしました!</div>
+
+    <script>
+        // ここにデータを追加してください
+        const sites = [
+            {
+                name: 'K-DIVEコックピット',
+                id: 'IDは必要ありません',
+                password: 'passwordは必要ありません',
+                url: 'https://harada-kazuki.github.io/live-redirect/'
+            },
+            {
+                name: '関電新丸山ダム',
+                id: 'kanmaru@ml.obayashi.co.jp',
+                password: 'kanmaru0884',
+                url: 'https://safie.link/mypage/auth/login?redirectTo=https:%2Fdevices%2Fcamera&appType=viewer'
+            },
+            {
+                name: '新須崎橋',
+                id: 'oby-shinsuzaki',
+                password: 'shinsuzaki1234',
+                url: 'https://www.gembaroid.net/'
+            }
+        ];
+
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const toast = document.getElementById('toast');
+        const noResults = document.getElementById('noResults');
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast();
+            });
+        }
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = '';
+                document.getElementById('siteTable').style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('siteTable').style.display = 'table';
+            noResults.style.display = 'none';
+
+            tableBody.innerHTML = data.map(site => `
+                <tr>
+                    <td>
+                        <span class="clickable" onclick="window.open('${site.url}', '_blank')">
+                            ${site.name}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="copy-btn" onclick="copyToClipboard('${site.id}')">
+                            ${site.id}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="copy-btn" onclick="copyToClipboard('${site.password}')">
+                            ${site.password}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="clickable" onclick="window.open('${site.url}', '_blank')">
+                            ${site.url}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = sites.filter(site => 
+                site.name.toLowerCase().includes(searchTerm)
+            );
+            renderTable(filtered);
+        });
+
+        // 初期表示
+        renderTable(sites);
+    </script>
+</body>
+</html>
