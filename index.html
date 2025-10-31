@@ -22,12 +22,112 @@
             margin: 0 auto;
         }
 
+        /* ログイン画面 */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .login-container h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #202124;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dfe1e5;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #4285f4;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .login-btn:hover {
+            background-color: #1557b0;
+        }
+
+        .error-message {
+            color: #d93025;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* メインコンテンツ */
+        .main-content {
+            display: none;
+        }
+
+        .main-content.show {
+            display: block;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 0;
+        }
+
         h1 {
             color: #202124;
             font-size: 24px;
             font-weight: 400;
-            margin-bottom: 20px;
-            padding: 15px 0;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: #5f6368;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #3c4043;
         }
 
         .search-box {
@@ -51,7 +151,6 @@
             box-shadow: 0 1px 6px rgba(32,33,36,.28);
         }
 
-        /* デスクトップ用テーブル表示 */
         .desktop-table {
             display: block;
         }
@@ -96,7 +195,6 @@
             background-color: #f8f9fa;
         }
 
-        /* モバイル用カード表示 */
         .mobile-cards {
             display: none;
         }
@@ -205,16 +303,24 @@
             border-radius: 8px;
         }
 
-        /* タブレット・スマホ対応 */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
             }
 
+            .login-container {
+                margin: 50px auto;
+                padding: 30px 20px;
+            }
+
             h1 {
                 font-size: 20px;
-                padding: 10px 0;
-                margin-bottom: 15px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
 
             .desktop-table {
@@ -231,7 +337,6 @@
             }
         }
 
-        /* 極小画面対応 */
         @media (max-width: 480px) {
             .card {
                 padding: 12px;
@@ -259,14 +364,36 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- ログイン画面 -->
+    <div class="login-container" id="loginContainer">
         <h1>現場URLリスト</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginId">ID</label>
+                <input type="text" id="loginId" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">パスワード</label>
+                <input type="password" id="loginPassword" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="login-btn">ログイン</button>
+            <div class="error-message" id="errorMessage">
+                IDまたはパスワードが正しくありません
+            </div>
+        </form>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="container main-content" id="mainContent">
+        <div class="header">
+            <h1>現場URLリスト</h1>
+            <button class="logout-btn" id="logoutBtn">ログアウト</button>
+        </div>
         
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="現場名で検索...">
         </div>
 
-        <!-- デスクトップ用テーブル -->
         <div class="desktop-table">
             <table id="siteTable">
                 <thead>
@@ -282,7 +409,6 @@
             </table>
         </div>
 
-        <!-- モバイル用カード -->
         <div class="mobile-cards" id="mobileCards">
         </div>
 
@@ -294,6 +420,12 @@
     <div class="toast" id="toast">コピーしました!</div>
 
     <script>
+        // ログイン認証情報（ここを変更してください）
+        const AUTH = {
+            id: 'harada.kazuki',
+            password: 'Kw0527322351'
+        };
+
         const sites = [
             {
                 name: 'K-DIVE',
@@ -321,11 +453,55 @@
             }
         ];
 
+        const loginContainer = document.getElementById('loginContainer');
+        const mainContent = document.getElementById('mainContent');
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const logoutBtn = document.getElementById('logoutBtn');
         const tableBody = document.getElementById('tableBody');
         const mobileCards = document.getElementById('mobileCards');
         const searchInput = document.getElementById('searchInput');
         const toast = document.getElementById('toast');
         const noResults = document.getElementById('noResults');
+
+        // ログイン状態チェック
+        function checkAuth() {
+            const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+            if (isLoggedIn === 'true') {
+                showMainContent();
+            }
+        }
+
+        // ログイン処理
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (id === AUTH.id && password === AUTH.password) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                showMainContent();
+                errorMessage.classList.remove('show');
+            } else {
+                errorMessage.classList.add('show');
+            }
+        });
+
+        // ログアウト処理
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('isLoggedIn');
+            mainContent.classList.remove('show');
+            loginContainer.style.display = 'block';
+            document.getElementById('loginId').value = '';
+            document.getElementById('loginPassword').value = '';
+            errorMessage.classList.remove('show');
+        });
+
+        function showMainContent() {
+            loginContainer.style.display = 'none';
+            mainContent.classList.add('show');
+            renderTable(sites);
+        }
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
@@ -352,7 +528,6 @@
             document.getElementById('siteTable').style.display = 'table';
             noResults.style.display = 'none';
 
-            // デスクトップ用テーブル
             tableBody.innerHTML = data.map(site => `
                 <tr>
                     <td>
@@ -378,7 +553,6 @@
                 </tr>
             `).join('');
 
-            // モバイル用カード
             mobileCards.innerHTML = data.map(site => `
                 <div class="card">
                     <div class="card-header">
@@ -424,7 +598,8 @@
             renderTable(filtered);
         });
 
-        renderTable(sites);
+        // 初期化
+        checkAuth();
     </script>
 </body>
 </html>
